@@ -40,7 +40,7 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const { email, name = 'User', fullName } = JSON.parse(event.body || '{}');
+    const { email, name = 'User', fullName,gender, phone, password } = JSON.parse(event.body || '{}');
     if (!email) {
       return {
         statusCode: 400,
