@@ -20,7 +20,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async (event) => console.log("DEBUG SMTP:", process.env.SMTP_USER, process.env.SMTP_PASS ? "✔️" : "❌");
+ {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
