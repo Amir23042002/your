@@ -1,4 +1,3 @@
-
 import { Handler } from '@netlify/functions';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -20,14 +19,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-export const handler: Handler = async (event) => console.log("DEBUG SMTP:", process.env.SMTP_USER, process.env.SMTP_PASS ? "✔️" : "❌");
- {
+export const handler: Handler = async (event) => {
+  // 🔎 Debug – see if env vars are loaded
+  console.log(
+    'DEBUG SMTP:',
+    SMTP_USER || 'undefined',
+    SMTP_PASS ? '✔️' : '❌'
+  );
+
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: '',
-    };
+    return { statusCode: 200, headers: corsHeaders, body: '' };
   }
 
   if (event.httpMethod !== 'POST') {
@@ -39,31 +40,28 @@ export const handler: Handler = async (event) => console.log("DEBUG SMTP:", proc
   }
 
   try {
-    const { email, name = 'User', fullName, gender, phone, password } = JSON.parse(event.body || '{}');
+    const { email, name = 'User', fullName } = JSON.parse(event.body || '{}');
     if (!email) {
-      return { 
-        statusCode: 400, 
+      return {
+        statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Email required' }) 
+        body: JSON.stringify({ error: 'Email required' }),
       };
     }
 
+    // 6‑digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hash = crypto.createHash('sha256').update(otp).digest('hex');
     const expiry = new Date(Date.now() + 15 * 60 * 1000).toLocaleTimeString();
 
-    // Create nodemailer transporter with Brevo SMTP
+    // Nodemailer transport (Brevo SMTP)
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT),
       secure: false,
-      auth: { 
-        user: SMTP_USER, 
-        pass: SMTP_PASS 
-      },
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
     });
 
-    // Send email using Brevo SMTP
     await transporter.sendMail({
       from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
       to: email,
@@ -76,29 +74,19 @@ export const handler: Handler = async (event) => console.log("DEBUG SMTP:", proc
           <p>Hello ${fullName || name},</p>
           <p>Your verification code is valid for 15 minutes.</p>
           <p>Expires at: ${expiry}</p>
-        </div>`,
+        </div>
+      `,
     });
 
-    console.log('Email sent successfully via Brevo SMTP to:', email);
-
-    // Create OTP token with user data for verification
     const otpToken = jwt.sign(
-      { 
-        email, 
-        hash, 
-        fullName,
-        gender,
-        phone,
-        password,
-        exp: Math.floor(Date.now() / 1000) + 15 * 60 // 15 minutes
-      },
+      { email, hash, exp: Math.floor(Date.now() / 1000) + 15 * 60 },
       JWT_SECRET!
     );
 
-    return { 
-      statusCode: 200, 
+    return {
+      statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ success: true, otpToken }) 
+      body: JSON.stringify({ success: true, otpToken }),
     };
   } catch (error: any) {
     console.error('Send OTP error:', error);
