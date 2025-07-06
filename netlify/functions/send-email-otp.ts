@@ -52,7 +52,7 @@ export const handler: Handler = async (event) => {
     const expiry = new Date(Date.now() + 15 * 60 * 1000).toLocaleTimeString();
 
     // Create nodemailer transporter with Brevo SMTP
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT),
       secure: false,
