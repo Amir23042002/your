@@ -78,10 +78,18 @@ export const handler: Handler = async (event) => {
       `,
     });
 
-    const otpToken = jwt.sign(
-      { email, hash, exp: Math.floor(Date.now() / 1000) + 15 * 60 },
-      JWT_SECRET!
-    );
+   const otpToken = jwt.sign(
+  {
+    email,
+    hash,
+    fullName,
+    gender,
+    phone,
+    password,
+    exp: Math.floor(Date.now() / 1000) + 15 * 60
+  },
+  JWT_SECRET!
+);
 
     return {
       statusCode: 200,
